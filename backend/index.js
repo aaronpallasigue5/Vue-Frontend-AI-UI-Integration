@@ -1,24 +1,24 @@
-// backend/index.js
 import mysql from 'mysql2';
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 
+// Load environment variables from .env file (for local) or Render settings (for production)
 dotenv.config();
 
-// Create MySQL connection using env variables
-// backend/index.js
+// 1. Create MySQL connection using Render Environment Variables
 const connection = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT
+  host: process.env.DB_HOST,      // Should be caboose.proxy.rlwy.net
+  user: process.env.DB_USER,      // Should be root
+  password: process.env.DB_PASSWORD,  // Your long Railway password
+  database: process.env.DB_NAME,  // Should be railway
+  port: process.env.DB_PORT       // Should be 12979
 });
 
+// 2. Connect to the Database
 connection.connect(err => {
   if (err) {
-    console.error('Database connection failed:', err);
+    console.error('Database connection failed:', err.message);
   } else {
     console.log('Database connected successfully!');
   }
@@ -26,33 +26,36 @@ connection.connect(err => {
 
 const app = express();
 
-// Middleware
-app.use(cors());              // Enable CORS for frontend requests
-app.use(express.json());      // Parse JSON bodies
+// 3. Middleware
+app.use(cors());               // Allow requests from your frontend
+app.use(express.json());       // Allow JSON data in requests
 
-// Environment port (Render sets process.env.PORT automatically)
+// 4. Port Configuration for Render
 const PORT = process.env.PORT || 3000;
 
-// Routes
+// 5. Routes
 app.get('/', (req, res) => {
   res.json({ message: 'Backend API is running!' });
 });
 
+// Health check route
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date() });
 });
 
-// Optional test-db route to check DB connection
+// THE UPDATED TEST ROUTE: This reads data from your 'lab6' table
 app.get('/test-db', (req, res) => {
-  connection.query('SELECT 1 + 1 AS solution', (err, results) => {
+  connection.query('SELECT * FROM lab6', (err, results) => {
     if (err) {
+      console.error('Query error:', err.message);
       return res.status(500).json({ error: err.message });
     }
-    res.json({ result: results[0].solution });
+    // This will return the row you added (e.g., {"id": 101})
+    res.json(results); 
   });
 });
 
-// Start server
+// 6. Start the Server
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
   console.log(`Render will use PORT=${PORT} automatically when deployed`);
